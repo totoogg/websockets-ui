@@ -1,5 +1,6 @@
 import { RawData } from 'ws';
 import { logOut, registration } from '../handlers/reg.ts';
+import { createRoom, getRooms } from '../handlers/room.ts';
 
 const isValidJSON = (str: string) => {
   try {
@@ -26,8 +27,15 @@ export function handlers(port: number, data?: RawData): string {
           };
           return JSON.stringify(result);
         }
-        case 'create_room':
-          break;
+        case 'create_room': {
+          createRoom(port);
+          const result = {
+            type: 'update_room',
+            data: JSON.stringify(getRooms()),
+            id: 0,
+          };
+          return JSON.stringify(result);
+        }
         case 'add_user_to_room':
           break;
         case 'add_ships':

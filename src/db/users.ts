@@ -1,4 +1,4 @@
-import { IUser, IRegRequest, IRegResponse } from '../models/index.ts';
+import { IUser, IRegRequest, IRegResponse, IRoomUser } from '../models/index.ts';
 
 class Users {
   private users: IUser[] = [];
@@ -44,8 +44,10 @@ class Users {
 
   logOut(port: number): void {
     const userIndex = this.users.findIndex((el) => el.port === port);
-    this.users[userIndex].port = -1;
-    this.users[userIndex].login = false;
+    if (userIndex !== -1) {
+      this.users[userIndex].port = -1;
+      this.users[userIndex].login = false;
+    }
   }
 
   private createResponse(name: string, errorText: string, index: number, error: boolean): IRegResponse {
@@ -55,6 +57,17 @@ class Users {
       errorText,
       index,
     };
+  }
+
+  getUserByPort(port: number): IRoomUser {
+    const userIndex = this.users.findIndex((el) => el.port === port);
+    const userName = this.users[userIndex].name;
+    const result = {
+      index: userIndex,
+      name: userName,
+    };
+
+    return result;
   }
 }
 
