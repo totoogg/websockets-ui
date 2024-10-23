@@ -69,6 +69,10 @@ class Users {
 
     return result;
   }
+
+  getUserByIndex(index: number): IUser {
+    return this.users[index];
+  }
 }
 
 export const users = new Users();

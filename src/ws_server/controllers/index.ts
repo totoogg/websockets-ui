@@ -1,6 +1,6 @@
 import { RawData } from 'ws';
 import { logOut, registration } from '../handlers/reg.ts';
-import { createRoom, getRooms } from '../handlers/room.ts';
+import { createRoom, getRooms, getUsersInRoom, joinRoom } from '../handlers/room.ts';
 
 const isValidJSON = (str: string) => {
   try {
@@ -23,6 +23,7 @@ export function handlers(port: number, data?: RawData): string {
           const result = {
             type: 'reg',
             data: JSON.stringify(regResponse),
+            dataRoom: JSON.stringify(getRooms()),
             id: 0,
           };
           return JSON.stringify(result);
@@ -36,8 +37,20 @@ export function handlers(port: number, data?: RawData): string {
           };
           return JSON.stringify(result);
         }
-        case 'add_user_to_room':
+        case 'add_user_to_room': {
+          const indexRoom = JSON.parse(action.data).indexRoom;
+          if (joinRoom(port, indexRoom)) {
+            const result = {
+              type: 'update_room_create_game',
+              dataRoom: JSON.stringify(getRooms()),
+              dataGame: JSON.stringify(indexRoom),
+              players: JSON.stringify(getUsersInRoom(indexRoom)),
+              id: 0,
+            };
+            return JSON.stringify(result);
+          }
           break;
+        }
         case 'add_ships':
           break;
         case 'attack':

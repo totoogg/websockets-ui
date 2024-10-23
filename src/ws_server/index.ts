@@ -13,34 +13,76 @@ wss.on('connection', (ws, request) => {
   console.log(remotePort);
   console.log(request.socket.address());
 
-  clients.set(remotePort, ws);
-
   ws.on('error', console.error);
 
   ws.on('message', (message) => {
     console.log(`Received message ${message.toString()}`);
+
+    clients.set(remotePort, ws);
+
     const answer = handlers(remotePort, message);
-    switch (JSON.parse(answer).type) {
-      case 'reg':
-        ws.send(answer);
-        break;
-      case 'update_room':
-      case 'create_game':
-      case 'update_winners':
-        for (const client of clients.values()) {
-          client.send(answer);
+    if (answer) {
+      switch (JSON.parse(answer).type) {
+        case 'reg': {
+          const data = JSON.parse(answer);
+          const dataRoom = {
+            type: 'update_room',
+            data: '' + data.dataRoom,
+            id: 0,
+          };
+          delete data.dataRoom;
+          ws.send(JSON.stringify(data));
+          ws.send(JSON.stringify(dataRoom));
+          break;
         }
-        break;
-      case 'start_game':
-      case 'turn':
-      case 'attack':
-      case 'finish': {
-        const data = JSON.parse(answer);
-        const players: number[] = [...data.players];
-        delete data.players;
-        players.forEach((el) => clients.get(el).send(JSON.stringify(data)));
-        break;
+        case 'update_room':
+        case 'update_winners':
+          for (const client of clients.values()) {
+            client.send(answer);
+          }
+          break;
+        case 'create_game':
+        case 'start_game':
+        case 'turn':
+        case 'attack':
+        case 'finish': {
+          const data = JSON.parse(answer);
+          const players: number[] = [...data.players.port];
+          delete data.players;
+          players.forEach((el) => clients.get(el).send(JSON.stringify(data)));
+          break;
+        }
+        case 'update_room_create_game': {
+          const data = JSON.parse(answer);
+          const dataRoom = {
+            type: 'update_room',
+            data: data.dataRoom,
+            id: 0,
+          };
+
+          for (const client of clients.values()) {
+            client.send(JSON.stringify(dataRoom));
+          }
+
+          const players = [...JSON.parse(data.players)];
+
+          players.forEach((el) =>
+            clients.get(el.port).send(
+              JSON.stringify({
+                type: 'create_game',
+                data: JSON.stringify({
+                  idGame: data.dataGame,
+                  idPlayer: el.index,
+                }),
+                id: 0,
+              }),
+            ),
+          );
+          break;
+        }
       }
+    } else {
+      console.log(`An attempt by a user to enter a room that he created himself`);
     }
   });
 
