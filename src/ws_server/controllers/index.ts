@@ -1,6 +1,6 @@
 import { RawData } from 'ws';
 import { logOut, registration } from '../handlers/reg.ts';
-import { createRoom, getRooms, getUsersInRoom, joinRoom } from '../handlers/room.ts';
+import { addShips, createRoom, getRooms, getUsersInRoom, joinRoom } from '../handlers/room.ts';
 
 const isValidJSON = (str: string) => {
   try {
@@ -51,8 +51,20 @@ export function handlers(port: number, data?: RawData): string {
           }
           break;
         }
-        case 'add_ships':
+        case 'add_ships': {
+          const dataShip = JSON.parse(action.data);
+          const startGame = addShips(dataShip.gameId, dataShip.indexPlayer, dataShip.ships);
+          if (startGame) {
+            const result = {
+              type: 'start_game',
+              dataGame: JSON.stringify(startGame),
+              players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
+              id: 0,
+            };
+            return JSON.stringify(result);
+          }
           break;
+        }
         case 'attack':
           break;
         case 'randomAttack':

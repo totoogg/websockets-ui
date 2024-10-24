@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import 'dotenv/config';
 import { handlers } from './controllers/index.ts';
+import { IShip } from '../models/index.ts';
 
 const WS_PORT = Number(process.env.WS_PORT) || 3000;
 
@@ -21,7 +22,7 @@ wss.on('connection', (ws, request) => {
     clients.set(remotePort, ws);
 
     const answer = handlers(remotePort, message);
-    if (answer) {
+    if (typeof answer === 'string' && answer) {
       switch (JSON.parse(answer).type) {
         case 'reg': {
           const data = JSON.parse(answer);
@@ -41,15 +42,39 @@ wss.on('connection', (ws, request) => {
             client.send(answer);
           }
           break;
-        case 'create_game':
-        case 'start_game':
+        case 'create_game': {
+          const data = JSON.parse(answer);
+          const players = [...JSON.parse(data.players)];
+
+          delete data.player;
+
+          players.forEach((el) => clients.get(el.port).send(JSON.stringify(data)));
+          break;
+        }
+        case 'start_game': {
+          const data = JSON.parse(answer);
+          const dataSend = JSON.parse(data.dataGame);
+          const players = [...JSON.parse(data.players)];
+
+          players.forEach((el) =>
+            clients.get(el.port).send(
+              JSON.stringify({
+                type: 'start_game',
+                data: JSON.stringify({
+                  currentPlayerIndex: el.index,
+                  ships: dataSend.find(
+                    (index: { ships: IShip[]; currentPlayerIndex: number }) => index.currentPlayerIndex === el.index,
+                  ).ships,
+                }),
+                id: 0,
+              }),
+            ),
+          );
+          break;
+        }
         case 'turn':
         case 'attack':
         case 'finish': {
-          const data = JSON.parse(answer);
-          const players: number[] = [...data.players.port];
-          delete data.players;
-          players.forEach((el) => clients.get(el).send(JSON.stringify(data)));
           break;
         }
         case 'update_room_create_game': {
