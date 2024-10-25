@@ -265,12 +265,15 @@ class Rooms {
           const checkKill = this.checkKill(gameId, indexPlayer, position);
 
           if (checkKill) {
+            const finish = this.rooms[roomIndex].roomUsers[playerIndex].field.flat().filter((el) => el === 3);
+
             return {
               positionShip: checkKill.positionShip,
               currentPlayer: indexPlayer,
               position,
               positionNear: checkKill.positionNear,
               status: 'killed',
+              finish: { status: finish.length === 20, winPlayer: indexPlayer },
             };
           }
           return { currentPlayer: indexPlayer, position, status: 'shot' };
@@ -324,129 +327,3 @@ class Rooms {
 }
 
 export const rooms = new Rooms();
-
-/* function checkKill(position) {
-  const field = [
-    [3, 0, 0, 0, 0, 0, 2, 0, 0, 2],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-    [0, 3, 0, 0, 0, 0, 0, 2, 0, 0],
-    [0, 3, 0, 0, 0, 0, 0, 2, 0, 0],
-    [0, 3, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 3, 0, 0, 0, 0, 2, 0, 2, 0],
-    [0, 0, 0, 3, 3, 0, 0, 0, 2, 0],
-    [0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 2, 0, 0, 0, 3, 3, 3, 0, 0],
-  ];
-
-  const positionShip = [{ ...position, status: 'shot' }];
-
-  for (let i = 0; i < 4; i++) {
-    if (i === 0) {
-      const x = position.x;
-      let y = position.y;
-      while (field[y - 1] && (field[y - 1][x] === 3 || field[y - 1][x] === 2)) {
-        const position = {
-          x,
-          y: y - 1,
-          status: field[y - 1][x] === 2 ? 'live' : 'shot',
-        };
-        positionShip.push(position);
-        y -= 1;
-      }
-    }
-    if (i === 1) {
-      let x = position.x;
-      const y = position.y;
-      while (field[y][x + 1] && (field[y][x + 1] === 3 || field[y][x + 1] === 2)) {
-        const position = {
-          x: x + 1,
-          y,
-          status: field[y][x + 1] === 2 ? 'live' : 'shot',
-        };
-        positionShip.push(position);
-        x += 1;
-      }
-    }
-    if (i === 2) {
-      const x = position.x;
-      let y = position.y;
-      while (field[y + 1] && (field[y + 1][x] === 3 || field[y + 1][x] === 2)) {
-        const position = {
-          x,
-          y: y + 1,
-          status: field[y + 1][x] === 2 ? 'live' : 'shot',
-        };
-        positionShip.push(position);
-        y += 1;
-      }
-    }
-    if (i === 3) {
-      let x = position.x;
-      const y = position.y;
-      while (field[y][x - 1] && (field[y][x - 1] === 3 || field[y][x - 1] === 2)) {
-        const position = {
-          x: x - 1,
-          y,
-          status: field[y][x - 1] === 2 ? 'live' : 'shot',
-        };
-        positionShip.push(position);
-        x -= 1;
-      }
-    }
-  }
-
-  if (positionShip.every((el) => el.status === 'shot')) {
-    const positionNear = [];
-    positionShip.forEach((el) => {
-      if (field[el.y - 1]) {
-        if (field[el.y - 1][el.x] === 0) {
-          field[el.y - 1][el.x] = 1;
-          positionNear.push({ x: el.x, y: el.y - 1 });
-        }
-
-        if (typeof field[el.y - 1][el.x + 1] === 'number' && field[el.y - 1][el.x + 1] === 0) {
-          field[el.y - 1][el.x + 1] = 1;
-          positionNear.push({ x: el.x + 1, y: el.y - 1 });
-        }
-
-        if (typeof field[el.y - 1][el.x - 1] === 'number' && field[el.y - 1][el.x - 1] === 0) {
-          field[el.y - 1][el.x - 1] = 1;
-          positionNear.push({ x: el.x - 1, y: el.y - 1 });
-        }
-      }
-
-      if (field[el.y + 1]) {
-        if (field[el.y + 1][el.x] === 0) {
-          field[el.y + 1][el.x] = 1;
-          positionNear.push({ x: el.x, y: el.y + 1 });
-        }
-
-        if (typeof field[el.y + 1][el.x + 1] === 'number' && field[el.y + 1][el.x + 1] === 0) {
-          field[el.y + 1][el.x + 1] = 1;
-          positionNear.push({ x: el.x + 1, y: el.y + 1 });
-        }
-
-        if (typeof field[el.y + 1][el.x - 1] === 'number' && field[el.y + 1][el.x - 1] === 0) {
-          field[el.y + 1][el.x - 1] = 1;
-          positionNear.push({ x: el.x - 1, y: el.y + 1 });
-        }
-      }
-
-      if (typeof field[el.y][el.x - 1] === 'number' && field[el.y][el.x - 1] === 0) {
-        field[el.y][el.x - 1] = 1;
-        positionNear.push({ x: el.x - 1, y: el.y });
-      }
-
-      if (typeof field[el.y][el.x + 1] === 'number' && field[el.y][el.x + 1] === 0) {
-        field[el.y][el.x + 1] = 1;
-        positionNear.push({ x: el.x + 1, y: el.y });
-      }
-    });
-
-    return { field, positionNear, positionShip };
-  } else {
-    return false;
-  }
-}
- */

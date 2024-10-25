@@ -7,6 +7,7 @@ import {
   getInfoTurn,
   getRooms,
   getUsersInRoom,
+  getWins,
   joinRoom,
   randomAttack,
 } from '../handlers/room.ts';
@@ -33,6 +34,7 @@ export function handlers(port: number, data?: RawData): string {
             type: 'reg',
             data: JSON.stringify(regResponse),
             dataRoom: JSON.stringify(getRooms()),
+            dataWins: JSON.stringify(getWins()),
             id: 0,
           };
           return JSON.stringify(result);
@@ -82,6 +84,7 @@ export function handlers(port: number, data?: RawData): string {
               type: 'attack',
               dataGame: JSON.stringify(attackAction),
               dataTurn: JSON.stringify(getInfoTurn(dataShip.gameId)),
+              dataWins: JSON.stringify(getWins()),
               players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
               id: 0,
             };
@@ -97,6 +100,7 @@ export function handlers(port: number, data?: RawData): string {
               type: 'attack',
               dataGame: JSON.stringify(attackAction),
               dataTurn: JSON.stringify(getInfoTurn(dataShip.gameId)),
+              dataWins: JSON.stringify(getWins()),
               players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
               id: 0,
             };

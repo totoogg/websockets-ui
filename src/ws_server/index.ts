@@ -35,17 +35,24 @@ wss.on('connection', (ws, request) => {
             data: '' + data.dataRoom,
             id: 0,
           };
+          const dataWins = {
+            type: 'update_winners',
+            data: '' + data.dataWins,
+            id: 0,
+          };
+
           delete data.dataRoom;
+          delete data.dataWins;
+
           ws.send(JSON.stringify(data));
-          ws.send(JSON.stringify(dataRoom));
+
+          for (const client of clients.values()) {
+            client.send(JSON.stringify(dataRoom));
+            client.send(JSON.stringify(dataWins));
+          }
+
           break;
         }
-        case 'update_room':
-        case 'update_winners':
-          for (const client of clients.values()) {
-            client.send(answer);
-          }
-          break;
         case 'create_game': {
           const data = JSON.parse(answer);
           const players = [...JSON.parse(data.players)];
@@ -89,10 +96,17 @@ wss.on('connection', (ws, request) => {
           );
           break;
         }
+        case 'update_room':
+        case 'update_winners':
+          for (const client of clients.values()) {
+            client.send(answer);
+          }
+          break;
         case 'attack': {
           const data = JSON.parse(answer);
           const dataSend = JSON.parse(data.dataGame);
           const dataTurn = JSON.parse(data.dataTurn);
+          const dataWins = JSON.parse(data.dataWins);
           const players = [...JSON.parse(data.players)];
 
           players.forEach((el) =>
@@ -140,20 +154,42 @@ wss.on('connection', (ws, request) => {
             });
           }
 
-          players.forEach((el) =>
-            clients.get(el.port).send(
-              JSON.stringify({
-                type: 'turn',
-                data: JSON.stringify({
-                  currentPlayer: dataTurn.find((player: { turn: boolean }) => player.turn === true).index,
+          if (dataSend.finish && dataSend.finish.status) {
+            players.forEach((el) =>
+              clients.get(el.port).send(
+                JSON.stringify({
+                  type: 'finish',
+                  data: JSON.stringify({
+                    winPlayer: dataSend.finish.winPlayer,
+                  }),
+                  id: 0,
                 }),
-                id: 0,
-              }),
-            ),
-          );
-          break;
-        }
-        case 'finish': {
+              ),
+            );
+
+            for (const client of clients.values()) {
+              client.send(
+                JSON.stringify({
+                  type: 'update_winners',
+                  data: JSON.stringify(dataWins),
+                  id: 0,
+                }),
+              );
+            }
+          } else {
+            players.forEach((el) =>
+              clients.get(el.port).send(
+                JSON.stringify({
+                  type: 'turn',
+                  data: JSON.stringify({
+                    currentPlayer: dataTurn.find((player: { turn: boolean }) => player.turn === true).index,
+                  }),
+                  id: 0,
+                }),
+              ),
+            );
+          }
+
           break;
         }
         case 'update_room_create_game': {

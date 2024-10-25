@@ -50,6 +50,14 @@ class Users {
     }
   }
 
+  updateWin(index: number) {
+    this.users[index].wins += 1;
+  }
+
+  getInfoWins() {
+    return this.users.map((el) => ({ name: el.name, wins: el.wins }));
+  }
+
   private createResponse(name: string, errorText: string, index: number, error: boolean): IRegResponse {
     return {
       name,

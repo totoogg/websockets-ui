@@ -47,9 +47,29 @@ export function getInfoTurn(indexRoom: number) {
 }
 
 export function attack(indexRoom: number, indexPlayer: number, position: IPosition) {
-  return rooms.attack(indexRoom, indexPlayer, position);
+  const attack = rooms.attack(indexRoom, indexPlayer, position);
+
+  if (attack && attack.finish?.status) {
+    updateWin(indexPlayer);
+  }
+
+  return attack;
 }
 
 export function randomAttack(indexRoom: number, indexPlayer: number) {
-  return rooms.randomAttack(indexRoom, indexPlayer);
+  const attack = rooms.randomAttack(indexRoom, indexPlayer);
+
+  if (attack && attack.finish?.status) {
+    updateWin(indexPlayer);
+  }
+
+  return attack;
+}
+
+export function updateWin(indexPlayer: number) {
+  users.updateWin(indexPlayer);
+}
+
+export function getWins() {
+  return users.getInfoWins();
 }
