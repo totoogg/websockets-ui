@@ -1,6 +1,6 @@
 import { rooms } from '../../db/rooms.ts';
 import { users } from '../../db/users.ts';
-import { IRoom, IShip } from '../../models/index.ts';
+import { IPosition, IRoom, IShip } from '../../models/index.ts';
 
 export function createRoom(port: number): void {
   const user = users.getUserByPort(port);
@@ -37,7 +37,19 @@ export function addShips(indexRoom: number, indexPlayer: number, ships: IShip[])
   rooms.fillField(indexRoom, indexPlayer, ships);
 
   if (rooms.checkPlayersReady(indexRoom)) {
-    return rooms.getInfoPlayersStartGame(indexRoom);
+    return rooms.getInfoPlayersStartGame(indexRoom, true);
   }
   return false;
+}
+
+export function getInfoTurn(indexRoom: number) {
+  return rooms.getInfoPlayersStartGame(indexRoom);
+}
+
+export function attack(indexRoom: number, indexPlayer: number, position: IPosition) {
+  return rooms.attack(indexRoom, indexPlayer, position);
+}
+
+export function randomAttack(indexRoom: number, indexPlayer: number) {
+  return rooms.randomAttack(indexRoom, indexPlayer);
 }

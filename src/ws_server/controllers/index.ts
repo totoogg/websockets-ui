@@ -1,6 +1,15 @@
 import { RawData } from 'ws';
 import { logOut, registration } from '../handlers/reg.ts';
-import { addShips, createRoom, getRooms, getUsersInRoom, joinRoom } from '../handlers/room.ts';
+import {
+  addShips,
+  attack,
+  createRoom,
+  getInfoTurn,
+  getRooms,
+  getUsersInRoom,
+  joinRoom,
+  randomAttack,
+} from '../handlers/room.ts';
 
 const isValidJSON = (str: string) => {
   try {
@@ -49,7 +58,7 @@ export function handlers(port: number, data?: RawData): string {
             };
             return JSON.stringify(result);
           }
-          break;
+          return 'Incorrect room';
         }
         case 'add_ships': {
           const dataShip = JSON.parse(action.data);
@@ -65,10 +74,36 @@ export function handlers(port: number, data?: RawData): string {
           }
           break;
         }
-        case 'attack':
+        case 'attack': {
+          const dataShip = JSON.parse(action.data);
+          const attackAction = attack(dataShip.gameId, dataShip.indexPlayer, { x: dataShip.x, y: dataShip.y });
+          if (attackAction) {
+            const result = {
+              type: 'attack',
+              dataGame: JSON.stringify(attackAction),
+              dataTurn: JSON.stringify(getInfoTurn(dataShip.gameId)),
+              players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
+              id: 0,
+            };
+            return JSON.stringify(result);
+          }
           break;
-        case 'randomAttack':
+        }
+        case 'randomAttack': {
+          const dataShip = JSON.parse(action.data);
+          const attackAction = randomAttack(dataShip.gameId, dataShip.indexPlayer);
+          if (attackAction) {
+            const result = {
+              type: 'attack',
+              dataGame: JSON.stringify(attackAction),
+              dataTurn: JSON.stringify(getInfoTurn(dataShip.gameId)),
+              players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
+              id: 0,
+            };
+            return JSON.stringify(result);
+          }
           break;
+        }
         case 'single_play':
           break;
 

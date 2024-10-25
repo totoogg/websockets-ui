@@ -22,6 +22,10 @@ wss.on('connection', (ws, request) => {
     clients.set(remotePort, ws);
 
     const answer = handlers(remotePort, message);
+    if (answer === 'Incorrect room') {
+      console.log(`An attempt by a user to enter a room that he created himself`);
+      return;
+    }
     if (typeof answer === 'string' && answer) {
       switch (JSON.parse(answer).type) {
         case 'reg': {
@@ -63,8 +67,21 @@ wss.on('connection', (ws, request) => {
                 data: JSON.stringify({
                   currentPlayerIndex: el.index,
                   ships: dataSend.find(
-                    (index: { ships: IShip[]; currentPlayerIndex: number }) => index.currentPlayerIndex === el.index,
-                  ).ships,
+                    (index: { answerShip: { ships: IShip[]; currentPlayerIndex: number } }) =>
+                      index.answerShip.currentPlayerIndex === el.index,
+                  ).answerShip.ships,
+                }),
+                id: 0,
+              }),
+            ),
+          );
+
+          players.forEach((el) =>
+            clients.get(el.port).send(
+              JSON.stringify({
+                type: 'turn',
+                data: JSON.stringify({
+                  currentPlayer: dataSend.find((player: { turn: boolean }) => player.turn === true).index,
                 }),
                 id: 0,
               }),
@@ -72,8 +89,70 @@ wss.on('connection', (ws, request) => {
           );
           break;
         }
-        case 'turn':
-        case 'attack':
+        case 'attack': {
+          const data = JSON.parse(answer);
+          const dataSend = JSON.parse(data.dataGame);
+          const dataTurn = JSON.parse(data.dataTurn);
+          const players = [...JSON.parse(data.players)];
+
+          players.forEach((el) =>
+            clients.get(el.port).send(
+              JSON.stringify({
+                type: 'attack',
+                data: JSON.stringify({
+                  currentPlayer: dataSend.currentPlayer,
+                  status: dataSend.status,
+                  position: dataSend.position,
+                }),
+                id: 0,
+              }),
+            ),
+          );
+
+          if (dataSend.status === 'killed') {
+            players.forEach((el) => {
+              for (let i = 0; i < dataSend.positionShip.length; i++) {
+                clients.get(el.port).send(
+                  JSON.stringify({
+                    type: 'attack',
+                    data: JSON.stringify({
+                      currentPlayer: dataSend.currentPlayer,
+                      status: 'killed',
+                      position: dataSend.positionShip[i],
+                    }),
+                    id: 0,
+                  }),
+                );
+              }
+              for (let i = 0; i < dataSend.positionNear.length; i++) {
+                clients.get(el.port).send(
+                  JSON.stringify({
+                    type: 'attack',
+                    data: JSON.stringify({
+                      currentPlayer: dataSend.currentPlayer,
+                      status: 'miss',
+                      position: dataSend.positionNear[i],
+                    }),
+                    id: 0,
+                  }),
+                );
+              }
+            });
+          }
+
+          players.forEach((el) =>
+            clients.get(el.port).send(
+              JSON.stringify({
+                type: 'turn',
+                data: JSON.stringify({
+                  currentPlayer: dataTurn.find((player: { turn: boolean }) => player.turn === true).index,
+                }),
+                id: 0,
+              }),
+            ),
+          );
+          break;
+        }
         case 'finish': {
           break;
         }
@@ -106,8 +185,6 @@ wss.on('connection', (ws, request) => {
           break;
         }
       }
-    } else {
-      console.log(`An attempt by a user to enter a room that he created himself`);
     }
   });
 

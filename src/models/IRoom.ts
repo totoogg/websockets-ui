@@ -12,14 +12,17 @@ export interface IRoomUser {
     ships: IShip[];
     currentPlayerIndex: number;
   };
+  turn?: boolean;
 }
 
 export interface IShip {
-  position: {
-    x: number;
-    y: number;
-  };
+  position: IPosition;
   direction: boolean;
   length: number;
   type: 'small' | 'medium' | 'large' | 'huge';
+}
+
+export interface IPosition {
+  x: number;
+  y: number;
 }
