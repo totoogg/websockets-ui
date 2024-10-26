@@ -73,3 +73,28 @@ export function updateWin(indexPlayer: number) {
 export function getWins() {
   return users.getInfoWins();
 }
+
+export function deleteRoom(indexRoom: number) {
+  rooms.deleteRoom(indexRoom);
+}
+
+export function leaveRoom(port: number) {
+  const user = users.getUserByPort(port);
+  const indexPlayer = rooms.leaveRoom(user);
+  if (typeof indexPlayer === 'number') {
+    const player = users.getUserByIndex(indexPlayer);
+    updateWin(indexPlayer);
+    return {
+      dataWins: JSON.stringify(getWins()),
+      player,
+      index: indexPlayer,
+    };
+  }
+  return '';
+}
+
+export function createRoomWithBot(port: number) {
+  const user = users.getUserByPort(port);
+
+  return rooms.createRoomWithBot(user);
+}

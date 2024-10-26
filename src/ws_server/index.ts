@@ -22,6 +22,7 @@ wss.on('connection', (ws, request) => {
     clients.set(remotePort, ws);
 
     const answer = handlers(remotePort, message);
+
     if (answer === 'Incorrect room') {
       console.log(`An attempt by a user to enter a room that he created himself`);
       return;
@@ -225,8 +226,32 @@ wss.on('connection', (ws, request) => {
   });
 
   ws.on('close', () => {
-    handlers(remotePort);
+    const data = JSON.parse(handlers(remotePort));
+    const dataWins = JSON.parse(data.dataWins);
+    const player = data.player;
+    const index = data.index;
+
     clients.delete(remotePort);
+
+    clients.get(player.port).send(
+      JSON.stringify({
+        type: 'finish',
+        data: JSON.stringify({
+          winPlayer: index,
+        }),
+        id: 0,
+      }),
+    );
+
+    for (const client of clients.values()) {
+      client.send(
+        JSON.stringify({
+          type: 'update_winners',
+          data: JSON.stringify(dataWins),
+          id: 0,
+        }),
+      );
+    }
     console.error('close', remotePort);
   });
 });

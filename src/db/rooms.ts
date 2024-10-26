@@ -324,6 +324,58 @@ class Rooms {
   private randomNumber(min: number, max: number) {
     return Math.floor(min + Math.random() * (max + 1 - min));
   }
+
+  deleteRoom(gameId: number) {
+    const roomIndex = this.rooms.findIndex((el) => el.roomId === Number(gameId));
+    this.rooms.splice(roomIndex, 1);
+  }
+
+  leaveRoom(user: IRoomUser) {
+    const indexRoom = this.rooms.findIndex((el) => el.roomUsers.some((player) => player.index === user.index));
+    const playerRemained = this.rooms[indexRoom].roomUsers.find((el) => el.index !== user.index);
+    const indexPlayer = playerRemained?.index;
+
+    this.deleteRoom(this.rooms[indexRoom].roomId);
+
+    return indexPlayer;
+  }
+
+  createRoomWithBot(user: IRoomUser): IRoom {
+    if (this.checkUser(user)) {
+      this.rooms.splice(
+        this.rooms.findIndex((el) => el.roomUsers.some((player) => player.name === user.name)),
+        1,
+      );
+    }
+
+    const room: IRoom = {
+      roomId: this.index,
+      roomUsers: [
+        {
+          name: user.name,
+          index: user.index,
+          field: new Array(10).fill(0).map(() => new Array(10).fill(0)),
+          ships: false,
+          answerShip: { currentPlayerIndex: user.index, ships: [] },
+          turn: false,
+        },
+        {
+          name: 'bot',
+          index: user.index + 1,
+          field: new Array(10).fill(0).map(() => new Array(10).fill(0)),
+          ships: false,
+          answerShip: { currentPlayerIndex: user.index + 1, ships: [] },
+          turn: false,
+        },
+      ],
+    };
+
+    this.index += 1;
+
+    this.rooms.push(room);
+
+    return room;
+  }
 }
 
 export const rooms = new Rooms();

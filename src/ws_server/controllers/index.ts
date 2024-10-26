@@ -4,11 +4,14 @@ import {
   addShips,
   attack,
   createRoom,
+  createRoomWithBot,
+  deleteRoom,
   getInfoTurn,
   getRooms,
   getUsersInRoom,
   getWins,
   joinRoom,
+  leaveRoom,
   randomAttack,
 } from '../handlers/room.ts';
 
@@ -82,12 +85,15 @@ export function handlers(port: number, data?: RawData): string {
           if (attackAction) {
             const result = {
               type: 'attack',
-              dataGame: JSON.stringify(attackAction),
+              players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
               dataTurn: JSON.stringify(getInfoTurn(dataShip.gameId)),
               dataWins: JSON.stringify(getWins()),
-              players: JSON.stringify(getUsersInRoom(dataShip.gameId)),
+              dataGame: JSON.stringify(attackAction),
               id: 0,
             };
+            if (attackAction.finish?.status) {
+              deleteRoom(dataShip.gameId);
+            }
             return JSON.stringify(result);
           }
           break;
@@ -108,8 +114,15 @@ export function handlers(port: number, data?: RawData): string {
           }
           break;
         }
-        case 'single_play':
-          break;
+        case 'single_play': {
+          createRoomWithBot(port);
+          const result = {
+            type: 'update_room',
+            data: JSON.stringify(getRooms()),
+            id: 0,
+          };
+          return JSON.stringify(result);
+        }
 
         default:
           console.error('Incorrect type');
@@ -119,7 +132,9 @@ export function handlers(port: number, data?: RawData): string {
       console.error('Incorrect JSON');
     }
   } else {
+    const result = JSON.stringify(leaveRoom(port));
     logOut(port);
+    return result;
   }
   return '';
 }
