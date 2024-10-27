@@ -13,6 +13,7 @@ export interface IRoomUser {
     currentPlayerIndex: number;
   };
   turn?: boolean;
+  bot?: boolean;
 }
 
 export interface IShip {

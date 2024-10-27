@@ -1,4 +1,5 @@
 import { IPosition, IRoom, IRoomUser, IShip } from '../models/index.ts';
+import { botFields } from './fields.ts';
 
 class Rooms {
   private rooms: IRoom[] = [];
@@ -115,9 +116,13 @@ class Rooms {
       const players = room.roomUsers;
 
       if (startGame) {
-        const turnIndex = Math.random() > 0.5 ? players[0].index : players[1].index;
-        const playerIndex = players.findIndex((el) => el.index === turnIndex);
-        this.rooms[indexRoom].roomUsers[playerIndex].turn = true;
+        if (players[1].bot) {
+          this.rooms[indexRoom].roomUsers[0].turn = true;
+        } else {
+          const turnIndex = Math.random() > 0.5 ? players[0].index : players[1].index;
+          const playerIndex = players.findIndex((el) => el.index === turnIndex);
+          this.rooms[indexRoom].roomUsers[playerIndex].turn = true;
+        }
       }
 
       return room.roomUsers.map((el) => ({
@@ -362,21 +367,11 @@ class Rooms {
         {
           name: 'bot',
           index: user.index + 1,
-          field: [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 2, 0, 2, 0, 2, 0, 0, 2, 0],
-            [0, 2, 0, 0, 0, 2, 0, 0, 2, 0],
-            [0, 2, 0, 2, 0, 0, 0, 0, 2, 0],
-            [0, 0, 0, 0, 0, 2, 0, 0, 2, 0],
-            [0, 2, 2, 2, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 2, 2, 0, 0, 2, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ],
+          field: botFields[this.randomNumber(0, botFields.length - 1)],
           ships: true,
           answerShip: { currentPlayerIndex: user.index + 1, ships: [] },
           turn: false,
+          bot: true,
         },
       ],
     };
