@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "lint": "eslint --fix",
-    "start": "node dist/bundle.js",
-    "start:prod": "node --no-warnings=ExperimentalWarning --loader ts-node/esm node_modules/webpack-cli/bin/cli.js --config webpack.config.ts && npm start",
+    "start:prod": "tsx ./src/index.ts",
+    "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm node_modules/webpack-cli/bin/cli.js --config webpack.config.ts && npm run start:prod",
     "start:dev": "nodemon src/index.ts"
   },
   "author": "Andrei Auchynnikau",
@@ -31,7 +31,10 @@
     "webpack-cli": "=5.1.4"
   },
   "dependencies": {
+    "bufferutil": "^4.0.8",
     "dotenv": "=16.4.5",
-    "ws": "^8.8.0"
+    "tsx": "^4.19.2",
+    "utf-8-validate": "^6.0.4",
+    "ws": "^8.18.0"
   }
 }

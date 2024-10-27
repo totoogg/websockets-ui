@@ -10,15 +10,19 @@ export const wss = new WebSocketServer({ port: WS_PORT });
 
 const clients = new Map();
 
+wss.on('listening', () => {
+  console.log(`Start WebSocket server on the ${WS_PORT} port!`);
+});
+
 wss.on('connection', (ws, request) => {
   const remotePort = request.socket.remotePort || 0;
-  console.log(remotePort);
-  console.log(request.socket.address());
+
+  console.log(`The client connected to port ${remotePort}!`);
 
   ws.on('error', console.error);
 
   ws.on('message', (message) => {
-    console.log(`Received message ${message.toString()}`);
+    console.log(`Received message: ${message}`);
 
     clients.set(remotePort, ws);
 
@@ -48,6 +52,10 @@ wss.on('connection', (ws, request) => {
 
           ws.send(JSON.stringify(data));
 
+          console.log(`Sent message: ${JSON.stringify(data)}`);
+          console.log(`Sent message: ${JSON.stringify(dataRoom)}`);
+          console.log(`Sent message: ${JSON.stringify(dataWins)}`);
+
           for (const client of clients.values()) {
             client.send(JSON.stringify(dataRoom));
             client.send(JSON.stringify(dataWins));
@@ -62,6 +70,9 @@ wss.on('connection', (ws, request) => {
           delete data.player;
 
           players.forEach((el) => clients.get(el.port).send(JSON.stringify(data)));
+
+          console.log(`Sent message: ${JSON.stringify(data)}`);
+
           break;
         }
         case 'start_game': {
@@ -71,33 +82,39 @@ wss.on('connection', (ws, request) => {
 
           players.forEach((el) => {
             if (el.port > 0) {
-              clients.get(el.port).send(
-                JSON.stringify({
-                  type: 'start_game',
-                  data: JSON.stringify({
-                    currentPlayerIndex: el.index,
-                    ships: dataSend.find(
-                      (index: { answerShip: { ships: IShip[]; currentPlayerIndex: number } }) =>
-                        index.answerShip.currentPlayerIndex === el.index,
-                    ).answerShip.ships,
-                  }),
-                  id: 0,
+              const sentData = {
+                type: 'start_game',
+                data: JSON.stringify({
+                  currentPlayerIndex: el.index,
+                  ships: dataSend.find(
+                    (index: { answerShip: { ships: IShip[]; currentPlayerIndex: number } }) =>
+                      index.answerShip.currentPlayerIndex === el.index,
+                  ).answerShip.ships,
                 }),
-              );
+                id: 0,
+              };
+
+              clients.get(el.port).send(JSON.stringify(sentData));
+
+              console.log(`Sent message: ${JSON.stringify(sentData)}`);
             }
           });
 
-          players.forEach((el) => {
+          players.forEach((el, i) => {
             if (el.port > 0) {
-              clients.get(el.port).send(
-                JSON.stringify({
-                  type: 'turn',
-                  data: JSON.stringify({
-                    currentPlayer: dataSend.find((player: { turn: boolean }) => player.turn === true).index,
-                  }),
-                  id: 0,
+              const sentData = {
+                type: 'turn',
+                data: JSON.stringify({
+                  currentPlayer: dataSend.find((player: { turn: boolean }) => player.turn === true).index,
                 }),
-              );
+                id: 0,
+              };
+
+              clients.get(el.port).send(JSON.stringify(sentData));
+
+              if (i === 0) {
+                console.log(`Sent message: ${JSON.stringify(sentData)}`);
+              }
             }
           });
 
@@ -115,6 +132,9 @@ wss.on('connection', (ws, request) => {
           for (const client of clients.values()) {
             client.send(answer);
           }
+
+          console.log(`Sent message: ${answer}`);
+
           break;
         case 'attack': {
           actionAttack(answer);
@@ -132,20 +152,24 @@ wss.on('connection', (ws, request) => {
             client.send(JSON.stringify(dataRoom));
           }
 
+          console.log(`Sent message: ${JSON.stringify(dataRoom)}`);
+
           const players = [...JSON.parse(data.players)];
 
-          players.forEach((el) =>
-            clients.get(el.port).send(
-              JSON.stringify({
-                type: 'create_game',
-                data: JSON.stringify({
-                  idGame: data.dataGame,
-                  idPlayer: el.index,
-                }),
-                id: 0,
+          players.forEach((el) => {
+            const sentData = {
+              type: 'create_game',
+              data: JSON.stringify({
+                idGame: data.dataGame,
+                idPlayer: el.index,
               }),
-            ),
-          );
+              id: 0,
+            };
+
+            clients.get(el.port).send(JSON.stringify(sentData));
+
+            console.log(`Sent message: ${JSON.stringify(sentData)}`);
+          });
           break;
         }
       }
@@ -161,35 +185,38 @@ wss.on('connection', (ws, request) => {
     clients.delete(remotePort);
 
     if (player && player.port !== -1) {
-      clients.get(player.port).send(
-        JSON.stringify({
-          type: 'finish',
-          data: JSON.stringify({
-            winPlayer: index,
-          }),
-          id: 0,
+      const sentData = {
+        type: 'finish',
+        data: JSON.stringify({
+          winPlayer: index,
         }),
-      );
+        id: 0,
+      };
+      clients.get(player.port).send(JSON.stringify(sentData));
+
+      console.log(`Sent message: ${JSON.stringify(sentData)}`);
+
+      const sentWinner = {
+        type: 'update_winners',
+        data: JSON.stringify(dataWins),
+        id: 0,
+      };
 
       for (const client of clients.values()) {
-        client.send(
-          JSON.stringify({
-            type: 'update_winners',
-            data: JSON.stringify(dataWins),
-            id: 0,
-          }),
-        );
+        client.send(JSON.stringify(sentWinner));
       }
+
+      console.log(`Sent message: ${JSON.stringify(sentWinner)}`);
     }
 
-    console.error('close', remotePort);
+    console.log(`The client on port ${remotePort} has disconnected!`);
   });
 });
 
 wss.on('error', console.error);
 
 wss.on('close', () => {
-  console.log('WebSocket server close');
+  console.log(`WebSocket server on port ${WS_PORT} is closed!`);
 });
 
 function actionAttack(answer: string) {
@@ -199,19 +226,23 @@ function actionAttack(answer: string) {
   const dataWins = JSON.parse(data.dataWins);
   const players = [...JSON.parse(data.players)];
 
-  players.forEach((el) => {
+  players.forEach((el, i) => {
     if (el.port > 0) {
-      clients.get(el.port).send(
-        JSON.stringify({
-          type: 'attack',
-          data: JSON.stringify({
-            currentPlayer: dataSend.currentPlayer,
-            status: dataSend.status,
-            position: dataSend.position,
-          }),
-          id: 0,
+      const sentData = {
+        type: 'attack',
+        data: JSON.stringify({
+          currentPlayer: dataSend.currentPlayer,
+          status: dataSend.status,
+          position: dataSend.position,
         }),
-      );
+        id: 0,
+      };
+
+      clients.get(el.port).send(JSON.stringify(sentData));
+
+      if (i === 0) {
+        console.log(`Sent message: ${JSON.stringify(sentData)}`);
+      }
     }
   });
 
@@ -219,75 +250,90 @@ function actionAttack(answer: string) {
     players.forEach((el) => {
       if (el.port > 0) {
         for (let i = 0; i < dataSend.positionShip.length; i++) {
-          clients.get(el.port).send(
-            JSON.stringify({
-              type: 'attack',
-              data: JSON.stringify({
-                currentPlayer: dataSend.currentPlayer,
-                status: 'killed',
-                position: dataSend.positionShip[i],
-              }),
-              id: 0,
+          const sentData = {
+            type: 'attack',
+            data: JSON.stringify({
+              currentPlayer: dataSend.currentPlayer,
+              status: 'killed',
+              position: dataSend.positionShip[i],
             }),
-          );
+            id: 0,
+          };
+
+          clients.get(el.port).send(JSON.stringify(sentData));
+
+          console.log(`Sent message: ${JSON.stringify(sentData)}`);
         }
+
         for (let i = 0; i < dataSend.positionNear.length; i++) {
-          clients.get(el.port).send(
-            JSON.stringify({
-              type: 'attack',
-              data: JSON.stringify({
-                currentPlayer: dataSend.currentPlayer,
-                status: 'miss',
-                position: dataSend.positionNear[i],
-              }),
-              id: 0,
+          const sentData = {
+            type: 'attack',
+            data: JSON.stringify({
+              currentPlayer: dataSend.currentPlayer,
+              status: 'miss',
+              position: dataSend.positionNear[i],
             }),
-          );
+            id: 0,
+          };
+
+          clients.get(el.port).send(JSON.stringify(sentData));
+
+          console.log(`Sent message: ${JSON.stringify(sentData)}`);
         }
       }
     });
   }
 
   if (dataSend.finish && dataSend.finish.status) {
-    players.forEach((el) => {
+    players.forEach((el, i) => {
       if (el.port > 0) {
-        clients.get(el.port).send(
-          JSON.stringify({
-            type: 'finish',
-            data: JSON.stringify({
-              winPlayer: dataSend.finish.winPlayer,
-            }),
-            id: 0,
+        const sentData = {
+          type: 'finish',
+          data: JSON.stringify({
+            winPlayer: dataSend.finish.winPlayer,
           }),
-        );
+          id: 0,
+        };
+
+        clients.get(el.port).send(JSON.stringify(sentData));
+
+        if (i === 0) {
+          console.log(`Sent message: ${JSON.stringify(sentData)}`);
+        }
       }
     });
+
+    const sentWinner = {
+      type: 'update_winners',
+      data: JSON.stringify(dataWins),
+      id: 0,
+    };
 
     for (const client of clients.values()) {
-      client.send(
-        JSON.stringify({
-          type: 'update_winners',
-          data: JSON.stringify(dataWins),
-          id: 0,
-        }),
-      );
+      client.send(JSON.stringify(sentWinner));
     }
+
+    console.log(`Sent message: ${JSON.stringify(sentWinner)}`);
   } else {
-    players.forEach((el) => {
+    players.forEach((el, i) => {
       if (el.port > 0) {
-        clients.get(el.port).send(
-          JSON.stringify({
-            type: 'turn',
-            data: JSON.stringify({
-              currentPlayer: dataTurn.find((player: { turn: boolean }) => player.turn === true).index,
-            }),
-            id: 0,
+        const sentData = {
+          type: 'turn',
+          data: JSON.stringify({
+            currentPlayer: dataTurn.find((player: { turn: boolean }) => player.turn === true).index,
           }),
-        );
+          id: 0,
+        };
+
+        clients.get(el.port).send(JSON.stringify(sentData));
+
+        if (i === 0) {
+          console.log(`Sent message: ${JSON.stringify(sentData)}`);
+        }
       }
     });
 
-    if (dataTurn[1].turn) {
+    if (players[1].port === -1 && dataTurn[1].turn) {
       const attack = botTurn(players[0].index);
       if (attack) {
         actionAttack(JSON.stringify(attack));
