@@ -115,10 +115,11 @@ export function handlers(port: number, data?: RawData): string {
           break;
         }
         case 'single_play': {
-          createRoomWithBot(port);
+          const room = createRoomWithBot(port);
           const result = {
-            type: 'update_room',
-            data: JSON.stringify(getRooms()),
+            type: 'create_game',
+            players: JSON.stringify([{ port }]),
+            data: JSON.stringify(room),
             id: 0,
           };
           return JSON.stringify(result);

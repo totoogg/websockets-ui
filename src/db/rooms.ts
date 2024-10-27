@@ -300,10 +300,10 @@ class Rooms {
 
     for (let i = 0; i < field.length; i++) {
       for (let x = 0; x < field[i].length; x++) {
-        if (field[i][x] === 1) {
+        if (field[i][x] === 1 || field[i][x] === 3) {
           field[i][x] = -1;
         }
-        if (field[i][x] === 0) {
+        if (field[i][x] === 0 || field[i][x] === 2) {
           field[i][x] = x + i * 10;
         }
       }
@@ -362,8 +362,19 @@ class Rooms {
         {
           name: 'bot',
           index: user.index + 1,
-          field: new Array(10).fill(0).map(() => new Array(10).fill(0)),
-          ships: false,
+          field: [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 0, 2, 0, 2, 0, 0, 2, 0],
+            [0, 2, 0, 0, 0, 2, 0, 0, 2, 0],
+            [0, 2, 0, 2, 0, 0, 0, 0, 2, 0],
+            [0, 0, 0, 0, 0, 2, 0, 0, 2, 0],
+            [0, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [2, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 2, 2, 0, 0, 2, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          ],
+          ships: true,
           answerShip: { currentPlayerIndex: user.index + 1, ships: [] },
           turn: false,
         },
@@ -375,6 +386,21 @@ class Rooms {
     this.rooms.push(room);
 
     return room;
+  }
+
+  botTurn(indexPlayer: number) {
+    const indexRoom = this.rooms.findIndex((el) => el.roomUsers.some((player) => player.index === indexPlayer));
+    const bot = this.rooms[indexRoom].roomUsers[1];
+    const gameId = this.rooms[indexRoom].roomId;
+
+    if (bot.turn) {
+      return {
+        attack: this.randomAttack(gameId, bot.index),
+        gameId,
+      };
+    }
+
+    return false;
   }
 }
 

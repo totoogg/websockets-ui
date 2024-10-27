@@ -24,13 +24,15 @@ export function joinRoom(port: number, indexRoom: number): boolean {
 }
 
 export function getUsersInRoom(indexRoom: number) {
-  return rooms
+  const players = rooms
     .getRoomByIndex(Number(indexRoom))
     ?.roomUsers.map((el) => el.index)
     .map((el) => ({
       index: el,
-      port: users.getUserByIndex(el).port,
+      port: users.getUserByIndex(el)?.port || -1,
     }));
+
+  return players;
 }
 
 export function addShips(indexRoom: number, indexPlayer: number, ships: IShip[]) {
@@ -95,6 +97,26 @@ export function leaveRoom(port: number) {
 
 export function createRoomWithBot(port: number) {
   const user = users.getUserByPort(port);
+  const result = {
+    idPlayer: user.index,
+    idGame: rooms.createRoomWithBot(user).roomId,
+  };
 
-  return rooms.createRoomWithBot(user);
+  return result;
+}
+
+export function botTurn(indexPlayer: number) {
+  const attack = rooms.botTurn(indexPlayer);
+
+  if (attack) {
+    const result = {
+      players: JSON.stringify(getUsersInRoom(attack.gameId)),
+      dataTurn: JSON.stringify(getInfoTurn(attack.gameId)),
+      dataWins: JSON.stringify(getWins()),
+      dataGame: JSON.stringify(attack.attack),
+    };
+
+    return result;
+  }
+  return attack;
 }

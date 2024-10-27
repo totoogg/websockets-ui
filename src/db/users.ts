@@ -51,7 +51,9 @@ class Users {
   }
 
   updateWin(index: number) {
-    this.users[index].wins += 1;
+    if (index >= 0 && this.users[index]) {
+      this.users[index].wins += 1;
+    }
   }
 
   getInfoWins() {
