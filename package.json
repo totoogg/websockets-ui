@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "lint": "eslint --fix",
-    "start:prod": "tsx ./src/index.ts",
-    "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm node_modules/webpack-cli/bin/cli.js --config webpack.config.ts && npm run start:prod",
+    "start": "tsx ./src/index.ts",
+    "start:prod": "node --no-warnings=ExperimentalWarning --loader ts-node/esm node_modules/webpack-cli/bin/cli.js --config webpack.config.ts",
     "start:dev": "nodemon src/index.ts"
   },
   "author": "Andrei Auchynnikau",
