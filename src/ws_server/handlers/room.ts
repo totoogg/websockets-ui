@@ -81,16 +81,18 @@ export function deleteRoom(indexRoom: number) {
 }
 
 export function leaveRoom(port: number) {
-  const user = users.getUserByPort(port);
-  const indexPlayer = rooms.leaveRoom(user);
-  if (typeof indexPlayer === 'number') {
-    const player = users.getUserByIndex(indexPlayer);
-    updateWin(indexPlayer);
-    return {
-      dataWins: JSON.stringify(getWins()),
-      player,
-      index: indexPlayer,
-    };
+  if (checkUserByPort(port)) {
+    const user = users.getUserByPort(port);
+    const indexPlayer = rooms.leaveRoom(user);
+    if (typeof indexPlayer === 'number') {
+      const player = users.getUserByIndex(indexPlayer);
+      updateWin(indexPlayer);
+      return {
+        dataWins: JSON.stringify(getWins()),
+        player,
+        index: indexPlayer,
+      };
+    }
   }
   return '';
 }
@@ -119,4 +121,8 @@ export function botTurn(indexPlayer: number) {
     return result;
   }
   return attack;
+}
+
+export function checkUserByPort(port: number): boolean {
+  return users.checkUserByPort(port);
 }

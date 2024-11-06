@@ -53,6 +53,7 @@ class Users {
   updateWin(index: number) {
     if (index >= 0 && this.users[index]) {
       this.users[index].wins += 1;
+      this.users.sort((a, b) => b.wins - a.wins);
     }
   }
 
@@ -82,6 +83,10 @@ class Users {
 
   getUserByIndex(index: number): IUser {
     return this.users[index];
+  }
+
+  checkUserByPort(port: number): boolean {
+    return this.users.some((el) => el.port === port);
   }
 }
 

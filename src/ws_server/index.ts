@@ -66,12 +66,33 @@ wss.on('connection', (ws, request) => {
         case 'create_game': {
           const data = JSON.parse(answer);
           const players = [...JSON.parse(data.players)];
+          let rooms;
+
+          if (data.dataRoom) {
+            rooms = [...JSON.parse(data.dataRoom)];
+
+            delete data.dataRoom;
+          }
 
           delete data.player;
 
           players.forEach((el) => clients.get(el.port).send(JSON.stringify(data)));
 
           console.log(`Sent message: ${JSON.stringify(data)}`);
+
+          if (rooms) {
+            const answer = {
+              type: 'update_room',
+              data: JSON.stringify(rooms),
+              id: 0,
+            };
+
+            for (const client of clients.values()) {
+              client.send(JSON.stringify(answer));
+            }
+
+            console.log(`Sent message: ${JSON.stringify(answer)}`);
+          }
 
           break;
         }
@@ -178,35 +199,50 @@ wss.on('connection', (ws, request) => {
 
   ws.on('close', () => {
     const data = JSON.parse(handlers(remotePort));
-    const dataWins = JSON.parse(data.dataWins);
-    const player = data.player;
-    const index = data.index;
 
     clients.delete(remotePort);
 
-    if (player && player.port !== -1) {
-      const sentData = {
-        type: 'finish',
-        data: JSON.stringify({
-          winPlayer: index,
-        }),
-        id: 0,
-      };
-      clients.get(player.port).send(JSON.stringify(sentData));
+    if (!Array.isArray(data)) {
+      const dataWins = JSON.parse(data.dataWins);
+      const player = data.player;
+      const index = data.index;
 
-      console.log(`Sent message: ${JSON.stringify(sentData)}`);
+      if (player && player.port !== -1) {
+        const sentData = {
+          type: 'finish',
+          data: JSON.stringify({
+            winPlayer: index,
+          }),
+          id: 0,
+        };
+        clients.get(player.port).send(JSON.stringify(sentData));
 
-      const sentWinner = {
-        type: 'update_winners',
-        data: JSON.stringify(dataWins),
+        console.log(`Sent message: ${JSON.stringify(sentData)}`);
+
+        const sentWinner = {
+          type: 'update_winners',
+          data: JSON.stringify(dataWins),
+          id: 0,
+        };
+
+        for (const client of clients.values()) {
+          client.send(JSON.stringify(sentWinner));
+        }
+
+        console.log(`Sent message: ${JSON.stringify(sentWinner)}`);
+      }
+    } else {
+      const answer = {
+        type: 'update_room',
+        data: JSON.stringify(data),
         id: 0,
       };
 
       for (const client of clients.values()) {
-        client.send(JSON.stringify(sentWinner));
+        client.send(JSON.stringify(answer));
       }
 
-      console.log(`Sent message: ${JSON.stringify(sentWinner)}`);
+      console.log(`Sent message: ${JSON.stringify(answer)}`);
     }
 
     console.log(`The client on port ${remotePort} has disconnected!`);

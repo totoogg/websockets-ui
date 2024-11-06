@@ -43,13 +43,19 @@ export function handlers(port: number, data?: RawData): string {
           return JSON.stringify(result);
         }
         case 'create_room': {
+          const roomStart = getRooms();
           createRoom(port);
-          const result = {
-            type: 'update_room',
-            data: JSON.stringify(getRooms()),
-            id: 0,
-          };
-          return JSON.stringify(result);
+          const roomEnd = getRooms();
+          if (roomStart.length !== roomEnd.length) {
+            const result = {
+              type: 'update_room',
+              data: JSON.stringify(getRooms()),
+              id: 0,
+            };
+            return JSON.stringify(result);
+          }
+
+          break;
         }
         case 'add_user_to_room': {
           const indexRoom = JSON.parse(action.data).indexRoom;
@@ -120,6 +126,7 @@ export function handlers(port: number, data?: RawData): string {
             type: 'create_game',
             players: JSON.stringify([{ port }]),
             data: JSON.stringify(room),
+            dataRoom: JSON.stringify(getRooms()),
             id: 0,
           };
           return JSON.stringify(result);
@@ -133,8 +140,10 @@ export function handlers(port: number, data?: RawData): string {
       console.error('Incorrect JSON');
     }
   } else {
-    const result = JSON.stringify(leaveRoom(port));
+    const result = JSON.stringify(leaveRoom(port) || getRooms());
+
     logOut(port);
+
     return result;
   }
   return '';

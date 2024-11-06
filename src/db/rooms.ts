@@ -337,12 +337,15 @@ class Rooms {
 
   leaveRoom(user: IRoomUser) {
     const indexRoom = this.rooms.findIndex((el) => el.roomUsers.some((player) => player.index === user.index));
-    const playerRemained = this.rooms[indexRoom].roomUsers.find((el) => el.index !== user.index);
-    const indexPlayer = playerRemained?.index;
+    if (this.rooms[indexRoom].roomUsers.length === 2) {
+      const playerRemained = this.rooms[indexRoom].roomUsers.find((el) => el.index !== user.index);
+      const indexPlayer = playerRemained?.index;
 
-    this.deleteRoom(this.rooms[indexRoom].roomId);
+      this.deleteRoom(this.rooms[indexRoom].roomId);
 
-    return indexPlayer;
+      return indexPlayer;
+    }
+    return '';
   }
 
   createRoomWithBot(user: IRoomUser): IRoom {
@@ -352,6 +355,8 @@ class Rooms {
         1,
       );
     }
+
+    const index = Math.random();
 
     const room: IRoom = {
       roomId: this.index,
@@ -366,10 +371,10 @@ class Rooms {
         },
         {
           name: 'bot',
-          index: user.index + 1,
+          index,
           field: botFields[this.randomNumber(0, botFields.length - 1)],
           ships: true,
-          answerShip: { currentPlayerIndex: user.index + 1, ships: [] },
+          answerShip: { currentPlayerIndex: index, ships: [] },
           turn: false,
           bot: true,
         },
